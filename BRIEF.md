@@ -24,7 +24,11 @@
 #### Инициализация БД: при первом запуске приложение само создаёт таблицы из встроенного SQL-скрипта.
 
 ## Модель данных (ER-диаграмма)(4)
+<img width="1408" height="768" alt="download" src="https://github.com/user-attachments/assets/3d6d9710-f477-48fb-897e-38412ee48986" />
 
+
+## Макеты интерфейса (5)
+<img width="1408" height="768" alt="download" src="https://github.com/user-attachments/assets/2bc800a6-b40c-4669-88ef-eef945710162" />
 
 
 ## Сценарии использования (Use Cases)(6)
