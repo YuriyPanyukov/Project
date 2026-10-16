@@ -1,10 +1,10 @@
+2.1
 1. Метод получения всех записей (getAll)
 Описание: Извлекает полный список фильмов из коллекции для отображения в главном меню или каталоге.
 Входные параметры: нет
 Возвращаемое значение: List<Movie> (список объектов, содержащих данные о фильмах)
 SQL-запрос:sql
 SELECT id, title, duration, rating, status_id FROM movies
-
 
 2. Метод получения записи по идентификатору (getById)
 Описание: Находит конкретный фильм по его уникальному первичному ключу id (например, для открытия карточки фильма).
@@ -13,14 +13,12 @@ SELECT id, title, duration, rating, status_id FROM movies
 SQL-запрос:sql
 SELECT id, title, duration, rating, status_id FROM movies WHERE id = ?
 
-
 3. Метод добавления новой записи (insert)
 Описание: Сохраняет новую киноленту в базу данных. Поле id опускается, так как оно генерируется СУБД автоматически (AUTOINCREMENT).
 Входные параметры: Movie entity (объект класса Movie с заполненными полями title, duration, rating, status_id)
 Возвращаемое значение: boolean (true — если фильм успешно добавлен, false — если произошла ошибка вставки)
 SQL-запрос:sql
 INSERT INTO movies (title, duration, rating, status_id) VALUES (?, ?, ?, ?)
-
 
 4. Метод обновления существующей записи (update)
 Описание: Изменяет любые атрибуты уже существующего в коллекции фильма по его id.
@@ -29,10 +27,73 @@ INSERT INTO movies (title, duration, rating, status_id) VALUES (?, ?, ?, ?)
 SQL-запрос:sql
 UPDATE movies SET title = ?, duration = ?, rating = ?, status_id = ? WHERE id = ?
 
-
 5. Метод удаления записи (delete)
 Описание: Удаляет фильм из таблицы movies по его id. Благодаря настроенному ограничению ON DELETE CASCADE в вашей схеме БД, связанные записи в промежуточных таблицах movie_genres и movie_persons очистятся автоматически.
 Входные параметры: int id (идентификатор удаляемого фильма)
 Возвращаемое значение: boolean (true — если строка успешно удалена, false — при ошибке)
 SQL-запрос:sql
 DELETE FROM movies WHERE id = ?
+
+
+2.2
+1. Аналитическая операция: «Общая статистика коллекции»
+Название метода: getCollectionSummaryStats
+Описание: Подсчитывает общее число кинолент, добавленных пользователем в базу данных, и вычисляет их средний рейтинг (оценку). Позволяет вывести на главный экран базовую метрику ценности коллекции.
+Входные параметры: нет
+Возвращаемое значение: CollectionSummaryDTO (объект-контейнер со свойствами total_movies_count и average_collection_rating)
+SQL-запрос:sql
+SELECT 
+    COUNT(id) AS total_movies_count,
+    ROUND(AVG(rating), 2) AS average_collection_rating
+FROM movies;
+
+
+2. Аналитическая операция: «Топ-N авторов/режиссеров в коллекции»
+Название метода: getTopMoviePersonsByRole
+Описание: Находит персон с конкретной ролью в фильмах (например, 'Режиссер'), у которых в личной коллекции пользователя находится больше всего работ. Результат сортируется по убыванию количества фильмов, а при их равенстве — по среднему рейтингу. Количество строк ограничивается динамическим параметром N.
+Входные параметры:
+	1. String roleName — название роли (например, 'Режиссер')
+	2. int limitSize — число N для ограничения выборки (например, 5 для вывода Топ-5)
+Возвращаемое значение: List<PersonStatsDTO> (список объектов со статистикой по каждой персоне)
+SQL-запрос:sql
+SELECT 
+    p.full_name AS person_name,
+    COUNT(mp.movie_id) AS movies_count,
+    ROUND(AVG(m.rating), 2) AS average_movies_rating
+FROM persons p
+JOIN movie_persons mp ON p.id = mp.person_id
+JOIN movies m ON mp.movie_id = m.id
+WHERE mp.role = ?
+GROUP BY p.id, p.full_name
+ORDER BY movies_count DESC, average_movies_rating DESC
+LIMIT ?;
+
+
+3. Аналитическая операция: «Распределение фильмов по статусам просмотра»
+Название метода: getMoviesDistributionByStatus
+Описание: Группирует фильмы по их текущему статусу жизненного цикла (например, 'Вышел в прокат', 'Анонсирован'). В запросе применен оператор LEFT JOIN, что гарантирует вывод абсолютно всех существующих статусов из справочника, даже если к какому-то из них пока не привязан ни один фильм (в таком случае счетчик вернет 0).
+Входные параметры: нет
+Возвращаемое значение: List<StatusReportDTO> (список пар «название статуса — количество»)
+SQL-запрос:sql
+SELECT 
+    s.name AS status_name,
+    COUNT(m.id) AS movies_count
+FROM statuses s
+LEFT JOIN movies m ON s.id = m.status_id
+GROUP BY s.id, s.name
+ORDER BY movies_count DESC, s.name ASC;
+
+
+4. Аналитическая операция: «Рейтинг популярных жанров в коллекции»
+Название метода: getTopGenresReport
+Описание: Анализирует пересечение фильмов и жанров через связующую таблицу многие-ко-многим (movie_genres). Подсчитывает суммарное количество упоминаний каждого жанра в коллекции и выводит их в порядке убывания популярности.
+Входные параметры: нет
+Возвращаемое значение: List<GenreReportDTO> (список жанров, отсортированный от самых часто встречающихся к редким)
+SQL-запрос:sql
+SELECT 
+    g.name AS genre_name,
+    COUNT(mg.movie_id) AS total_movies_in_genre
+FROM genres g
+JOIN movie_genres mg ON g.id = mg.genre_id
+GROUP BY g.id, g.name
+ORDER BY total_movies_in_genre DESC, g.name ASC;
