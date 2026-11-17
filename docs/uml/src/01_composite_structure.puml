@@ -1,0 +1,71 @@
+@startuml 01_composite_structure
+!theme plain
+skinparam defaultFontName "DejaVu Sans"
+skinparam dpi 150
+title Диаграмма составной структуры программы\n«Менеджер личной коллекции фильмов» (Composite Structure Diagram)
+
+'======================= ВНЕШНЯЯ СРЕДА =======================
+actor "Пользователь" as User
+
+rectangle "Внешняя среда запуска" as ExtEnv {
+    component "main.py\n(точка входа, CLI-демонстрация)" as MainPy
+    component "tests.py,\ntest_logic.py (тесты)" as Tests
+}
+
+'======================= СИСТЕМА =============================
+rectangle "Система «Менеджер личной коллекции фильмов»" as System {
+
+    rectangle "Подсистема представления\n(консольный интерфейс)" as UIPart {
+        [ConsoleUI]
+    }
+
+    rectangle "Подсистема бизнес-логики\n(services/movie_service.py)" as BizPart {
+        [MovieService]
+        [BusinessRuleError]
+        [NotFoundError]
+    }
+
+    rectangle "Подсистема доступа к данным\n(DAO-слой)" as DAOPart {
+        [MovieDAO]
+        [StatsDAO]
+    }
+
+    rectangle "Подсистема доменных моделей\n(models.py)" as ModelPart {
+        [Movie]
+        [CollectionSummaryDTO]
+        [PersonStatsDTO]
+        [StatusReportDTO]
+        [GenreReportDTO]
+    }
+
+    rectangle "Подсистема подключения к БД\n(database.py)" as DBPart {
+        [get_connection()]
+    }
+
+    database "Хранилище SQLite movies.db\n(statuses, genres, persons,\nmovies, movie_genres,\nmovie_persons)" as DB
+}
+
+'=================== СВЯЗИ КОМПОНЕНТОВ ======================
+User -down-> UIPart : команды /\nрезультаты операций
+MainPy -up-> UIPart
+Tests -up-> BizPart : прямые вызовы API сервиса
+
+UIPart *-- BizPart : использует
+BizPart *-- DAOPart : делегирует запросы к БД
+BizPart ..> ModelPart : создаёт / возвращает DTO
+DAOPart ..> ModelPart : отображает строки\nв объекты Movie и DTO
+DAOPart *-- DBPart : открывает соединения
+DBPart -down-> DB : SQL-запросы (sqlite3)
+
+'---------------- порты MovieService ------------------------
+[UIPart] -right-> [MovieService] : add_movie(), edit_movie(),\ndelete_movie(), search_movies(),\nchange_status(), get_statistics()
+[MovieService] -- [NotFoundError]
+[MovieService] -- [BusinessRuleError]
+[MovieService] -down-> [MovieDAO] : insert(), getById(),\nupdate(), delete(),\nsearch_movies()
+[MovieService] -down-> [StatsDAO] : status_exists(), exists_ids(),\nreplace_movie_links(),\ngetTop*(), getMoviesDistribution*()
+[MovieService] ..> [get_connection()] : connection\n(транзакции)
+
+[MovieDAO] -down-> [get_connection()]
+[StatsDAO] -down-> [get_connection()]
+
+@enduml
