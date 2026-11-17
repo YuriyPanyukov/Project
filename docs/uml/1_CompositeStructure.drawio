@@ -1,0 +1,59 @@
+<mxfile host="app.diagrams.net" modified="2026-11-17T00:00:00.000Z" agent="drawio" version="24.0.0">
+  <diagram id="structure" name="Составная структура">
+    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="UML-диаграмма составной структуры системы «Менеджер личной коллекции фильмов»" style="text;html=1;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="60" y="20" width="560" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="system" value="Система «Менеджер коллекции фильмов»" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontStyle=1;fontSize=12;fillColor=none;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="70" width="520" height="620" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ui" value="«Пользовательский интерфейс»&#10;main.py" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="230" y="110" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="service" value="«Бизнес-логика»&#10;MovieService" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="230" y="250" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dao" value="«Хранение данных»&#10;MovieDAO" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="120" y="400" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="stats" value="«Статистика»&#10;StatsDAO" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="380" y="400" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="db" value="«База данных»&#10;SQLite (movies.db)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="265" y="560" width="150" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a1" value="вызов операций CRUD и статистики" style="html=1;endArrow=block;thinEnd=1;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ui" target="service">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a2" value="запрос данных фильма" style="html=1;endArrow=block;thinEnd=1;fontSize=10;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="service" target="dao">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a3" value="запрос отчётов" style="html=1;endArrow=block;thinEnd=1;fontSize=10;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="service" target="stats">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a4" value="SQL-запросы" style="html=1;endArrow=block;thinEnd=1;fontSize=10;exitX=0.5;exitY=1;entryX=0.25;entryY=0;" edge="1" parent="1" source="dao" target="db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a5" value="SQL-запросы" style="html=1;endArrow=block;thinEnd=1;fontSize=10;exitX=0.5;exitY=1;entryX=0.75;entryY=0;" edge="1" parent="1" source="stats" target="db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
