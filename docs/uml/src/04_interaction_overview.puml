@@ -1,0 +1,70 @@
+@startuml 03_interaction_overview
+!theme plain
+skinparam defaultFontName "DejaVu Sans"
+skinparam dpi 150
+title Диаграмма обзора взаимодействия\n«Менеджер личной коллекции фильмов» (Interaction Overview Diagram)
+
+start
+:Пользователь: запуск программы (main.py);
+
+repeat
+  :Главное меню: ввод команды;
+repeat while (Команда распознана?) is (нет, повторить) not (да)
+
+switch (тип команды)
+case ("Добавить фильм")
+  :**add_movie()**;
+  note right
+    MovieService: валидация данных и бизнес-правил
+    (_validate_movie_data, _ensure_status_exists,
+    _validate_links); при ошибке — BusinessRuleError
+  end note
+  if (Данные корректны?) then (да)
+    :**Транзакция**: MovieDAO.insert()\n+ StatsDAO.replace_movie_links();
+    :Сообщение об успехе,\nобновление списка коллекции;
+  else (нет)
+    :Вывод текста ошибки валидации;
+  endif
+case ("Список / Поиск")
+  :**search_movies(query, жанр, статус,\nоценки, сортировка)**;
+  :MovieDAO.search_movies() -> список фильмов;
+  if (Найдено хотя бы одно?) then (да)
+    :Отображение отфильтрованного списка;
+  else (нет)
+    :Сообщение «ничего не найдено»,\nпредложение сбросить фильтры;
+  endif
+case ("Изменить фильм")
+  :**edit_movie(id, поля)**;
+  if (Фильм существует и данные корректны?) then (да)
+    :MovieDAO.update(),\nзамена связей жанров/персон;
+    :Подтверждение изменений;
+  else (нет)
+    :NotFoundError / BusinessRuleError,\nсообщение об ошибке;
+  endif
+case ("Изменить статус")
+  :**change_status(id, status_id)**;
+  :Проверка существования статуса\n(StatsDAO.status_exists);
+  :MovieDAO.update(): переход фильма\n«В планах» -> «В процессе» -> «Завершено»;
+case ("Удалить фильм")
+  :**delete_movie(id, confirmed)**;
+  if (Пользователь подтвердил удаление?) then (да)
+    :MovieDAO.delete(id):\nкаскадное удаление связей\n(movie_genres, movie_persons);
+    :Фильм удалён из коллекции;
+  else (нет)
+    :Отмена операции, данные сохранены;
+  endif
+case ("Аналитика")
+  :**get_statistics(top_limit, роль)**;
+  :StatsDAO: сводка коллекции, топ персон,\nраспределение по статусам, топ жанров;
+  if (В БД есть элементы?) then (да)
+    :Вывод графиков и сводных таблиц;
+  else (нет)
+    :«Недостаточно данных для формирования аналитики»;
+  endif
+case ("Выход")
+  :Закрытие соединений sqlite3,\nсохранение movies.db;
+  stop
+endswitch
+
+-> следующая операция;
+@enduml

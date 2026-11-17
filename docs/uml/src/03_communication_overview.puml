@@ -1,0 +1,44 @@
+@startuml 03_communication_overview
+!theme plain
+skinparam defaultFontName "DejaVu Sans"
+skinparam dpi 150
+title Диаграмма обзора взаимодействия\n«Менеджер личной коллекции фильмов» (Communication / Interaction Overview Diagram)
+
+'==================== ОБЪЕКТЫ ДИАГРАММЫ ======================
+actor "Пользователь" as User
+
+rectangle "main.py\n:ConsoleUI" as UI #LightBlue
+rectangle ":MovieService\n(business logic)" as SVC #LightGreen
+rectangle ":MovieDAO" as MDAO
+rectangle ":StatsDAO" as SDAO
+rectangle ":get_connection()\ndatabase.py" as CONN
+database "SQLite\nmovies.db" as DB
+
+'==================== СВЯЗИ И СООБЩЕНИЯ ======================
+User -> UI : 1. Команда интерфейса\n(добавить / изменить / удалить /\nнайти / статус / аналитика)
+
+UI -> SVC : 2. add_movie(...), edit_movie(...),\ndelete_movie(id, confirmed),\nsearch_movies(...), change_status(...),\nget_statistics(...)
+
+SVC -> SVC : 3. Валидация данных и бизнес-правил:\n_validate_movie_data(),\n_ensure_status_exists(), _validate_links()
+
+SVC -> CONN : 4. Открыть соединение\nи транзакцию (with connection)
+CONN -> DB : 5. PRAGMA foreign_keys=ON,\nBEGIN TRANSACTION
+
+SVC -> SDAO : 6. Проверка справочников:\nstatus_exists(id), exists_ids(genres/persons),\nget_movie_links(id)
+SDAO -> CONN : 7. SELECT по справочникам
+SVC -> MDAO : 8. CRUD-запрос:\ninsert(Movie), getById(id), update(Movie),\ndelete(id), search_movies(фильтры)
+MDAO -> CONN : 9. Выполнение SQL
+SVC -> SDAO : 10. replace_movie_links(movie_id,\ngenre_ids, persons) — связи с жанрами\nи персонами; либо статистические запросы:\ngetCollectionSummaryStats(), getTop*()
+SDAO -> CONN : 11. INSERT/DELETE в movie_genres,\nmovie_persons; агрегирующие SELECT
+
+CONN -> DB : 12. COMMIT (или ROLLBACK\nпри ошибке sqlite3.Error)
+DB --> CONN : 13. Результат запроса\n(rows / lastrowid / rowcount)
+CONN --> MDAO : 14. sqlite3.Row
+MDAO --> SVC : 15. Movie / список словарей
+CONN --> SDAO : 16. sqlite3.Row
+SDAO --> SVC : 17. DTO: CollectionSummaryDTO,\nPersonStatsDTO, StatusReportDTO,\nGenreReportDTO
+
+SVC --> UI : 18. Результат операции\nили BusinessRuleError / NotFoundError
+UI --> User : 19. Сообщение об успехе,\nобновлённый список коллекции\nили текст ошибки
+
+@enduml
